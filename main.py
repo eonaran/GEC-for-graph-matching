@@ -2,8 +2,9 @@
 """
 Created on Tue Oct 10 23:30:07 2017
 
-@author: Stephanie
+@author: Efe
 """
+#GEC for MAP estimation of graph matching
 
 import numpy as np
 import matplotlib.pyplot as plt
