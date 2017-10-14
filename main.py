@@ -10,15 +10,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 def d(Q):
-    #return(Q);
-    return(np.ones((Q.shape))*np.mean(Q) );
+    return(Q);
+    #return(np.ones((Q.shape))*np.mean(Q) );
 
 def gec(A, B, aux, tol):
     N = A.shape[0];
-    sA = np.linalg.eigvalsh(A);
-    sB = np.linalg.eigvalsh(B);
-    sAsB = np.dot(sA,sB.T);
-    
+    sA, UA = np.linalg.eigh(A)
+    sB, UB = np.linalg.eigh(B)
+    UA2 = UA*UA;
+    UBT2 = (UB.T)*(UB.T);
+    sAsB =  sA[:,None]*sB[None,:];   
+        
     Jn = np.ones((N,N))/N;
     num_facnodes = 3;    
     gammap = [];
@@ -38,11 +40,12 @@ def gec(A, B, aux, tol):
         xold = x[:]; 
         
         #Factor node 1
-        Q = np.ones((N,N))/(1+(2/gammap[0])*sAsB );
-        x[0] = rp[0]*Q;
-        Q = Q/gammap[0];              
+        scale = gammap[0]/(gammap[0]+2*sAsB );
+        x[0] = UA.dot(UA.T.dot(rp[0]).dot(UB)*scale ).dot(UB.T);
+        Q = UA2.dot(scale).dot(UBT2)/gammap[0];             
         eta[0] = 1/d(Q);
         gammam[0] = eta[0] - gammap[0];
+        print(gammam[0]>0)
         rm[0] = eta[0]*x[0]/(num_facnodes-1) - gammap[0]*rp[0];        
         
         #factor node 2
@@ -54,8 +57,7 @@ def gec(A, B, aux, tol):
 
         #factor node 3 
         x[2] = (rp[2] + np.absolute(rp[2]))/2;
-        print(rp[2])
-        Q = (x[2]>0)/gammap[2] + 1e-6*(1-x[2]>0);        
+        Q = (x[2]>0)/gammap[2] + 1e-3*(1-x[2]>0);        
         eta[2] = 1/d(Q);
         gammam[2] = eta[2] - gammap[2];
         rm[2] = eta[2]*x[2]/(num_facnodes-1) - gammap[2]*rp[2];        
@@ -117,7 +119,7 @@ def main():
         for i in range(N):
             aux[i, perm[i]] = 1;
         X2 = np.dot(aux.T, np.dot(X2, aux));
-        tol = 0.5;
+        tol = 1;
         
         error = gec(X1, X2, aux, tol);
         gec_error[Nind, rind,expind] = error;
